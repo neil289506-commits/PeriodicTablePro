@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="互動式元素週期表 — 完整離線支援 PWA">
+  <meta name="theme-color" content="#0a0e1a" id="meta-theme">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="元素週期表">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Title -->
+  <title>PeriodicTable Pro Ultimate</title>
+
+  <!-- CSS — no external CDN, all self-hosted -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Inline critical font-face fallback (system fonts ensure offline render) -->
+  <style>
+    /* System font stack fallback when Google Fonts unavailable offline */
+    @font-face {
+      font-family: 'Space Mono';
+      src: local('Courier New'), local('Courier');
+      font-weight: 400;
+      unicode-range: U+0000-00FF;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ══════════════ HEADER ══════════════ -->
+<header id="app-header">
+  <div class="logo">
+    <span class="logo-main">⚛ Periodic<span style="color:var(--text)">Table</span></span>
+    <span class="logo-sub">PRO ULTIMATE</span>
+  </div>
+
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="search" id="search-input" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+
+  <div class="header-btns">
+    <button class="btn-icon" id="lang-btn" onclick="toggleLang()" title="切換語言">EN</button>
+    <button class="btn-icon" id="theme-btn" onclick="toggleTheme()" title="切換主題">☀️ 淺色</button>
+  </div>
+</header>
+
+<!-- ══════════════ LEGEND ══════════════ -->
+<div id="legend" role="navigation" aria-label="元素分類"></div>
+
+<!-- ══════════════ FILTER NOTICE ══════════════ -->
+<div id="filter-notice"></div>
+
+<!-- ══════════════ MAIN TABLE ══════════════ -->
+<main id="main-area">
+  <!-- Group number labels -->
+  <div id="group-labels"></div>
+
+  <!-- Main 18×7 grid -->
+  <div id="periodic-grid" role="grid" aria-label="週期表"></div>
+
+  <!-- F-block separator -->
+  <div style="height:10px;width:calc(18 * var(--cell) + 17 * var(--gap));margin:0 auto;
+              border-left:2px dashed var(--border);border-right:2px dashed var(--border);
+              opacity:0.3;"></div>
+
+  <!-- Lanthanides & Actinides -->
+  <div id="f-block-grid"></div>
+</main>
+
+<!-- ══════════════ MODAL ══════════════ -->
+<div id="modal-overlay" role="dialog" aria-modal="true" aria-label="元素詳情">
+  <div id="modal">
+    <button id="modal-close" aria-label="關閉">×</button>
+
+    <!-- Hero -->
+    <div class="modal-hero">
+      <div class="modal-hero-num" id="m-num">#1</div>
+      <div class="modal-hero-symbol" id="m-symbol">H</div>
+      <div class="modal-hero-name" id="m-name">Hydrogen</div>
+      <div class="modal-hero-cn" id="m-cn">氫</div>
+      <div class="modal-category-badge" id="m-badge">Nonmetal</div>
+      <div id="m-meta" style="margin-top:8px"></div>
+    </div>
+
+    <!-- Stats grid -->
+    <div class="modal-body">
+      <!-- Atomic mass -->
+      <div class="modal-stat">
+        <div class="modal-stat-label" data-label="atomic_mass">原子量</div>
+        <div class="modal-stat-value" id="m-mass">—</div>
+      </div>
+
+      <!-- Electronegativity -->
+      <div class="modal-stat">
+        <div class="modal-stat-label" data-label="electronegativity">電負度</div>
+        <div class="modal-stat-value" id="m-en">—</div>
+      </div>
+
+      <!-- Melting Point -->
+      <div class="modal-stat">
+        <div class="modal-stat-label" data-label="melting_pt">熔點</div>
+        <div class="modal-stat-value" id="m-mp">—</div>
+      </div>
+
+      <!-- Boiling Point -->
+      <div class="modal-stat">
+        <div class="modal-stat-label" data-label="boiling_pt">沸點</div>
+        <div class="modal-stat-value" id="m-bp">—</div>
+      </div>
+
+      <!-- Density -->
+      <div class="modal-stat">
+        <div class="modal-stat-label" data-label="density">密度</div>
+        <div class="modal-stat-value" id="m-density">—</div>
+      </div>
+
+      <!-- Ionization Energy -->
+      <div class="modal-stat">
+        <div class="modal-stat-label" data-label="ionization">游離能</div>
+        <div class="modal-stat-value" id="m-ie">—</div>
+      </div>
+
+      <!-- Atomic Radius -->
+      <div class="modal-stat">
+        <div class="modal-stat-label" data-label="atomic_radius">原子半徑</div>
+        <div class="modal-stat-value" id="m-ar">—</div>
+      </div>
+
+      <!-- Discovery -->
+      <div class="modal-stat">
+        <div class="modal-stat-label" data-label="discovery">發現年份</div>
+        <div class="modal-stat-value" id="m-disc">—</div>
+      </div>
+
+      <!-- Electron config (full width) -->
+      <div class="modal-stat full">
+        <div class="modal-stat-label" data-label="electron_conf">電子組態</div>
+        <div class="modal-stat-value" id="m-ec" style="font-size:0.82rem;letter-spacing:0.04em">—</div>
+      </div>
+
+      <!-- Shell diagram (full width) -->
+      <div class="modal-stat full">
+        <div class="modal-stat-label" data-label="shells">電子層分佈</div>
+        <div class="shell-diagram" id="m-shells"></div>
+      </div>
+    </div>
+
+    <!-- Prev / Next -->
+    <div class="modal-nav">
+      <button class="modal-nav-btn" id="modal-prev">◀ 上一個</button>
+      <button class="modal-nav-btn" id="modal-next">下一個 ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TOAST ══════════════ -->
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- ══════════════ PWA INSTALL BANNER ══════════════ -->
+<div id="pwa-banner">
+  <span id="pwa-msg">安裝此應用程式，離線也能使用！</span>
+  <button id="pwa-install">安裝</button>
+  <button id="pwa-dismiss">×</button>
+</div>
+
+<!-- ══════════════ SCRIPT ══════════════ -->
+<script src="app.js"></script>
+
+</body>
+</html>
